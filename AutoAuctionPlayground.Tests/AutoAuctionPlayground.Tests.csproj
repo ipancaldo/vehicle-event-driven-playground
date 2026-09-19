@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AutoAuctionPlayground\AutoAuctionPlayground.Web.csproj" />
+    <ProjectReference Include="..\AutoAuctionPlayground.Domain\AutoAuctionPlayground.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
