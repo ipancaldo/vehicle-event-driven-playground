@@ -1,4 +1,4 @@
-using AutoAuctionPlayground.Components;
+using AutoAuctionPlayground.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 

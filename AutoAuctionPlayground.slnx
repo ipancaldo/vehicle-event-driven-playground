@@ -1,3 +1,7 @@
 <Solution>
-  <Project Path="AutoAuctionPlayground/AutoAuctionPlayground.csproj" />
+  <Project Path="AutoAuctionPlayground.Application/AutoAuctionPlayground.Application.csproj" />
+  <Project Path="AutoAuctionPlayground.Domain/AutoAuctionPlayground.Domain.csproj" />
+  <Project Path="AutoAuctionPlayground.Infrastructure/AutoAuctionPlayground.Infrastructure.csproj" />
+  <Project Path="AutoAuctionPlayground.Test/AutoAuctionPlayground.Test.csproj" />
+  <Project Path="AutoAuctionPlayground/AutoAuctionPlayground.Web.csproj" />
 </Solution>
