@@ -2,7 +2,7 @@ using AutoAuctionPlayground.Domain.Enums;
 
 namespace AutoAuctionPlayground.Application.DTOs.VehicleListings
 {
-    public sealed record VehicleListingSummaryDto(
+    public sealed record VehicleListingSummaryDTO(
         Guid Id,
         Guid DealerId,
         Guid DealerCompanyId,
