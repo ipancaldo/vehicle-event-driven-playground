@@ -5,10 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <UserSecretsId>231101f6-b90c-41bc-9582-af5757820153</UserSecretsId>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Scrutor" Version="7.0.0" />
-  </ItemGroup>
 
 </Project>

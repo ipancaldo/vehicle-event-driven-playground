@@ -1,5 +1,5 @@
 using AutoAuctionPlayground.Web.Components;
-using AutoAuctionPlayground.Web.Extensions;
+using AutoAuctionPlayground.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,7 +7,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddCQRS();
+var apiBaseUrl = builder.Configuration["VehicleListingsApi:BaseUrl"] ?? "http://localhost:5280";
+builder.Services.AddHttpClient<VehicleListingsApiClient>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
 
 var app = builder.Build();
 

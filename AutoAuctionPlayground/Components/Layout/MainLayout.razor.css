@@ -1,3 +1,85 @@
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: .85rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.app-header__brand {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+}
+
+.app-header__mark {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.app-header__names {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.app-header__title {
+    font-size: .95rem;
+    font-weight: 650;
+    letter-spacing: -.01em;
+}
+
+.app-header__subtitle {
+    color: var(--text-muted);
+    font-size: .78rem;
+}
+
+.app-header__tag {
+    padding: .2rem .6rem;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--text-faint);
+    font-size: .74rem;
+    font-weight: 600;
+}
+
+/* Single content column today. The create/edit form (doc 8.1) becomes a second
+   grid column here, and the technical console (doc 8.3) a row beneath. */
+.app-main {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    flex: 1;
+}
+
+@media (max-width: 640px) {
+    .app-header {
+        padding: .75rem 1rem;
+    }
+
+    .app-main {
+        padding: 1rem;
+    }
+}
+
 #blazor-error-ui {
     color-scheme: light only;
     background: lightyellow;
