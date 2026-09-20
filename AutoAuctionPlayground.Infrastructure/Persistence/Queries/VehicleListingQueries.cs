@@ -10,7 +10,7 @@ namespace AutoAuctionPlayground.Infrastructure.Persistence.Queries
     // make in SQL and returns only the columns the DTO needs.
     public class VehicleListingQueries(AutoAuctionDbContext context) : IVehicleListingQueries
     {
-        public async Task<IReadOnlyList<VehicleListingSummaryDto>> List(
+        public async Task<IReadOnlyList<VehicleListingSummaryDTO>> List(
             VehicleListingStatus? status = null,
             Guid? dealerCompanyId = null,
             CancellationToken cancellationToken = default)
@@ -28,14 +28,14 @@ namespace AutoAuctionPlayground.Infrastructure.Persistence.Queries
                 .ToListAsync(cancellationToken);
         }
 
-        public Task<VehicleListingSummaryDto?> GetById(Guid id, CancellationToken cancellationToken = default)
+        public Task<VehicleListingSummaryDTO?> GetById(Guid id, CancellationToken cancellationToken = default)
             => context.VehicleListings.AsNoTracking()
                 .Where(l => l.Id == id)
                 .Select(Projection)
                 .FirstOrDefaultAsync(cancellationToken);
 
-        private static readonly System.Linq.Expressions.Expression<Func<VehicleListing, VehicleListingSummaryDto>> Projection =
-            l => new VehicleListingSummaryDto(
+        private static readonly System.Linq.Expressions.Expression<Func<VehicleListing, VehicleListingSummaryDTO>> Projection =
+            l => new VehicleListingSummaryDTO(
                 l.Id,
                 l.DealerId,
                 l.DealerCompanyId,

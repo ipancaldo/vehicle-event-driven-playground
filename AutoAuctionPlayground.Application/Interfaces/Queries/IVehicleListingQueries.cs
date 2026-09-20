@@ -7,11 +7,11 @@ namespace AutoAuctionPlayground.Application.Interfaces.Queries
     // aggregate loading), so listing screens never pay for Include chains they don't need.
     public interface IVehicleListingQueries
     {
-        Task<IReadOnlyList<VehicleListingSummaryDto>> List(
+        Task<IReadOnlyList<VehicleListingSummaryDTO>> List(
             VehicleListingStatus? status = null,
             Guid? dealerCompanyId = null,
             CancellationToken cancellationToken = default);
 
-        Task<VehicleListingSummaryDto?> GetById(Guid id, CancellationToken cancellationToken = default);
+        Task<VehicleListingSummaryDTO?> GetById(Guid id, CancellationToken cancellationToken = default);
     }
 }

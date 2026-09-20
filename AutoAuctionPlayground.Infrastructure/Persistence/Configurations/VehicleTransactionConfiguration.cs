@@ -13,6 +13,7 @@ namespace AutoAuctionPlayground.Infrastructure.Persistence.Configurations
         {
             builder.ToTable("vehicle_transactions");
             builder.HasKey(t => t.Id);
+            builder.Property(t => t.Id).ValueGeneratedNever(); // domain-assigned Guid, not store-generated
 
             builder.ComplexProperty(t => t.FinalPrice, price => price.ConfigureMoney("final_price"));
 

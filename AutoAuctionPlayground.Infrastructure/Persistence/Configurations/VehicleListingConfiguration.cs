@@ -12,6 +12,7 @@ namespace AutoAuctionPlayground.Infrastructure.Persistence.Configurations
         {
             builder.ToTable("vehicle_listings");
             builder.HasKey(l => l.Id);
+            builder.Property(l => l.Id).ValueGeneratedNever(); // domain-assigned Guid, not store-generated
 
             // Details and its nested Price are pure value objects (no identity), mapped as complex
             // types rather than OwnsOne. See MoneyConfiguration for why: this listing also has a

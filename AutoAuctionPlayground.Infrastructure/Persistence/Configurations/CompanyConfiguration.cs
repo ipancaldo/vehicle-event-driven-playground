@@ -10,6 +10,7 @@ namespace AutoAuctionPlayground.Infrastructure.Persistence.Configurations
         {
             builder.ToTable("companies");
             builder.HasKey(c => c.Id);
+            builder.Property(c => c.Id).ValueGeneratedNever(); // domain-assigned Guid, not store-generated
 
             builder.Property(c => c.Name).HasMaxLength(200).IsRequired();
             builder.HasIndex(c => c.Name).IsUnique();

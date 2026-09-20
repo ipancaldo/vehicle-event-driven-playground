@@ -58,7 +58,7 @@ namespace AutoAuctionPlayground.Domain.Entities.Vehicle
             return new VehicleListing(dealer, vehicleModel, details);
         }
 
-        // Concurrency hint: two colleagues editing the same listing is the "lost update" case.
+        // TODO: Concurrency hint: two colleagues editing the same listing is the "lost update" case.
         // This aggregate cannot detect it; the HTTP layer should require the version the client
         // loaded (ETag / If-Match) and the persistence layer a concurrency token, so the second
         // stale write is rejected instead of silently overwriting the first.
