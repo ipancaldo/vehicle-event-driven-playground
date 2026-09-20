@@ -1,0 +1,117 @@
+@using System.Globalization
+@using AutoAuctionPlayground.Web.Services
+@implements IDisposable
+@inject ApiActivityLog ActivityLog
+
+<section class="console @(_collapsed ? "console--collapsed" : null)">
+    <header class="console__bar">
+        <button type="button"
+                class="console__toggle"
+                title="@(_collapsed ? "Expand" : "Collapse")"
+                aria-label="@(_collapsed ? "Expand console" : "Collapse console")"
+                @onclick="() => _collapsed = !_collapsed">
+            @(_collapsed ? "▲" : "▼")
+        </button>
+
+        <button type="button" class="console__tab @(_tab == Tab.Logs ? "is-active" : null)" @onclick="() => Show(Tab.Logs)">
+            Live logs
+            @if (_entries.Count > 0)
+            {
+                <span class="count-chip">@_entries.Count</span>
+            }
+        </button>
+        <button type="button" class="console__tab @(_tab == Tab.Events ? "is-active" : null)" @onclick="() => Show(Tab.Events)">
+            Incoming / outgoing events
+        </button>
+
+        <span class="console__spacer"></span>
+        <button type="button" class="btn btn--sm" @onclick="ActivityLog.Clear" disabled="@(_entries.Count == 0)">Clear</button>
+    </header>
+
+    @if (!_collapsed)
+    {
+        <div class="console__body">
+            @if (_tab == Tab.Logs)
+            {
+                @if (_entries.Count == 0)
+                {
+                    <p class="console__empty">No API calls yet. Every request this console makes shows up here.</p>
+                }
+                else
+                {
+                    <table class="log">
+                        <tbody>
+                            @foreach (var entry in _entries)
+                            {
+                                <tr class="log__row @(entry.Success ? null : "log__row--failed")">
+                                    <td class="log__time mono">@entry.TimestampUtc.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)</td>
+                                    <td class="log__status">
+                                        <span class="badge badge--@(entry.Success ? "published" : "cancelled")">
+                                            @(entry.StatusCode == 0 ? "ERR" : entry.StatusCode.ToString())
+                                        </span>
+                                    </td>
+                                    <td class="log__method mono">@entry.Method</td>
+                                    <td class="log__path mono">@entry.Path</td>
+                                    <td class="log__note">
+                                        @if (entry.Note is not null)
+                                        {
+                                            <span class="log__tag">@entry.Note</span>
+                                        }
+                                        @if (entry.Error is not null)
+                                        {
+                                            <span class="log__error">@entry.Error</span>
+                                        }
+                                    </td>
+                                    <td class="log__duration mono">@entry.DurationMs ms</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            }
+            else
+            {
+                <div class="state">
+                    <span class="state__glyph" aria-hidden="true">~</span>
+                    <h3 class="state__title">No events yet</h3>
+                    <p class="state__text">
+                        Nothing publishes domain or integration events at this stage — every write is still
+                        fully synchronous.
+                    </p>
+                    <p class="state__hint">
+                        Once publishing raises <span class="mono">vehicle-listing.published.v1</span>, this tab shows each
+                        message with its type, id, correlation/causation ids, producer, consumer and delivery attempt.
+                    </p>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private enum Tab { Logs, Events }
+
+    private Tab _tab = Tab.Logs;
+    private bool _collapsed;
+    private IReadOnlyList<ApiActivityEntry> _entries = [];
+
+    protected override void OnInitialized()
+    {
+        ActivityLog.Changed += OnLogChanged;
+        _entries = ActivityLog.Snapshot();
+    }
+
+    private void Show(Tab tab)
+    {
+        _tab = tab;
+        _collapsed = false;
+    }
+
+    private void OnLogChanged()
+    {
+        _entries = ActivityLog.Snapshot();
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => ActivityLog.Changed -= OnLogChanged;
+}

@@ -1,0 +1,39 @@
+<div class="modal-backdrop" @onclick="Close">
+    <div class="modal modal--@Size" role="dialog" aria-modal="true" @onclick="NoOp" @onclick:stopPropagation="true">
+        <header class="modal__header">
+            <div class="modal__heading">
+                <h2 class="modal__title">
+                    @Title
+                    @if (TitleAside is not null)
+                    {
+                        @TitleAside
+                    }
+                </h2>
+                @if (!string.IsNullOrWhiteSpace(Subtitle))
+                {
+                    <p class="modal__subtitle mono">@Subtitle</p>
+                }
+            </div>
+            <button type="button" class="modal__close" @onclick="Close" aria-label="Close">&times;</button>
+        </header>
+
+        <div class="modal__body">
+            @ChildContent
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? TitleAside { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>"md" (default) or "lg".</summary>
+    [Parameter] public string Size { get; set; } = "md";
+
+    private Task Close() => OnClose.InvokeAsync();
+
+    private static void NoOp() { }
+}

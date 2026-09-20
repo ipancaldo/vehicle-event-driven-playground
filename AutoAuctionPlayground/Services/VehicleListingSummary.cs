@@ -7,12 +7,14 @@ namespace AutoAuctionPlayground.Web.Services
     public sealed record VehicleListingSummary(
         Guid Id,
         Guid DealerId,
+        Guid DealerCompanyId,
         string Vin,
         string Make,
         string Model,
         int Year,
         int MileageKm,
         decimal Price,
+        string Currency,
         string Status,
         DateTime CreatedAt,
         DateTime? UpdatedAt);

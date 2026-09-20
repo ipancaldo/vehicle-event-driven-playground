@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/AutoAuctionPlayground.Tests/">
-    <Project Path="AutoAuctionPlayground.Tests/AutoAuctionPlayground.Tests.csproj" />
+    <Project Path="AutoAuctionPlayground.Tests/AutoAuctionPlayground.Domain.Test/AutoAuctionPlayground.Domain.Test.csproj" />
+    <Project Path="AutoAuctionPlayground.Tests/AutoAuctionPlayground.Application.Test/AutoAuctionPlayground.Application.Test.csproj" />
   </Folder>
   <Project Path="AutoAuctionPlayground.API/AutoAuctionPlayground.API.csproj" />
   <Project Path="AutoAuctionPlayground.Application/AutoAuctionPlayground.Application.csproj" />

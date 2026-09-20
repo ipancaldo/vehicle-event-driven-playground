@@ -8,7 +8,15 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var apiBaseUrl = builder.Configuration["VehicleListingsApi:BaseUrl"] ?? "http://localhost:5280";
+
+// Shared across circuits on purpose: the console's log should survive page navigation.
+builder.Services.AddSingleton<ApiActivityLog>();
+
 builder.Services.AddHttpClient<VehicleListingsApiClient>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+builder.Services.AddHttpClient<CatalogueApiClient>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });
