@@ -1,7 +1,8 @@
 @page "/"
 @using System.Globalization
 @using AutoAuctionPlayground.Web.Services
-@inject VehicleListingsApiClient VehicleListingsApiClient
+@inject VehicleListingsApiClient Listings
+@inject CatalogueApiClient Catalogue
 @inject ILogger<Home> Logger
 @inject IConfiguration Configuration
 
@@ -11,7 +12,7 @@
     <header class="panel__header">
         <div>
             <h1 class="panel__title">Vehicle listings</h1>
-            <p class="panel__subtitle">Every advertisement currently known to the listings API.</p>
+            <p class="panel__subtitle">Select one to act on it.</p>
         </div>
         <div class="panel__actions">
             @if (_listings.Count > 0)
@@ -21,6 +22,9 @@
             <button type="button" class="btn" @onclick="LoadListingsAsync" disabled="@_isLoading">
                 @(_isLoading ? "Refreshing..." : "Refresh")
             </button>
+            <button type="button" class="btn btn--primary" @onclick="OpenCreate" disabled="@(_me is null)">
+                New listing
+            </button>
         </div>
     </header>
 
@@ -28,7 +32,7 @@
         @if (_isLoading)
         {
             <div class="listing-grid" aria-busy="true" aria-label="Loading vehicle listings">
-                @for (var i = 0; i < 3; i++)
+                @for (var i = 0; i < 6; i++)
                 {
                     <div class="skeleton-card"></div>
                 }
@@ -38,7 +42,7 @@
         {
             <div class="state state--error" role="alert">
                 <span class="state__glyph" aria-hidden="true">!</span>
-                <h2 class="state__title">Could not load vehicle listings</h2>
+                <h3 class="state__title">Could not load vehicle listings</h3>
                 <p class="state__text">@_errorMessage</p>
                 <p class="state__hint">Configured endpoint: @ApiBaseUrl</p>
                 <div class="state__actions">
@@ -50,11 +54,8 @@
         {
             <div class="state">
                 <span class="state__glyph" aria-hidden="true">+</span>
-                <h2 class="state__title">No vehicle listings yet</h2>
-                <p class="state__text">
-                    The API answered successfully with an empty list, so nothing has been listed so far.
-                </p>
-                <p class="state__hint">Creating a listing arrives with the create use case.</p>
+                <h3 class="state__title">No vehicle listings yet</h3>
+                <p class="state__text">Use “New listing” to create the first draft.</p>
             </div>
         }
         else
@@ -62,32 +63,21 @@
             <div class="listing-grid">
                 @foreach (var listing in _listings)
                 {
-                    <article class="listing">
+                    <article class="listing" role="button" tabindex="0"
+                             @onclick="() => OpenDetail(listing)"
+                             @onkeypress="e => OnListingKey(e, listing)">
                         <div class="listing__head">
-                            <div>
-                                <h2 class="listing__title">@listing.Year @listing.Make @listing.Model</h2>
-                                <p class="listing__vin mono">@listing.Vin</p>
-                            </div>
+                            <h3 class="listing__title">@listing.Year @listing.Make @listing.Model</h3>
                             <span class="badge badge--@StatusModifier(listing.Status)">
                                 <span class="badge__dot" aria-hidden="true"></span>@listing.Status
                             </span>
                         </div>
-
-                        <dl class="meta">
-                            <div class="meta__item">
-                                <dt>Price</dt>
-                                <dd>@listing.Price.ToString("N0", CultureInfo.InvariantCulture)</dd>
-                            </div>
-                            <div class="meta__item">
-                                <dt>Mileage</dt>
-                                <dd>@listing.MileageKm.ToString("N0", CultureInfo.InvariantCulture) km</dd>
-                            </div>
-                        </dl>
-
-                        <footer class="listing__foot">
-                            <span class="mono" title="Dealer @listing.DealerId">dealer @ShortId(listing.DealerId)</span>
-                            <span>@FormatUtc(listing.CreatedAt)</span>
-                        </footer>
+                        <p class="listing__vin mono">@listing.Vin</p>
+                        <p class="listing__facts">
+                            <strong>@listing.Price.ToString("N0", CultureInfo.InvariantCulture) @listing.Currency</strong>
+                            <span aria-hidden="true">·</span>
+                            <span>@listing.MileageKm.ToString("N0", CultureInfo.InvariantCulture) km</span>
+                        </p>
                     </article>
                 }
             </div>
@@ -95,16 +85,202 @@
     </div>
 </section>
 
+@if (_showCreate)
+{
+    <Modal Title="New listing"
+           Subtitle="@($"Listed by {_me?.Display} — starts as a Draft")"
+           Size="lg"
+           OnClose="CloseCreate">
+        <div class="form-grid">
+            <label class="field">
+                <span class="field__label">Make</span>
+                <select class="field__input" @bind="_makeId" @bind:after="OnMakeChanged">
+                    @foreach (var make in _makes)
+                    {
+                        <option value="@make.Id">@make.Name</option>
+                    }
+                </select>
+            </label>
+
+            <label class="field">
+                <span class="field__label">Model</span>
+                <select class="field__input" @bind="_modelId">
+                    @foreach (var model in SelectedMakeModels)
+                    {
+                        <option value="@model.Id">@model.Name</option>
+                    }
+                </select>
+            </label>
+
+            <label class="field">
+                <span class="field__label">VIN</span>
+                <input class="field__input mono" @bind="_vin" maxlength="17" />
+            </label>
+
+            <label class="field">
+                <span class="field__label">Year</span>
+                <input class="field__input" type="number" @bind="_year" />
+            </label>
+
+            <label class="field">
+                <span class="field__label">Mileage (km)</span>
+                <input class="field__input" type="number" @bind="_mileageKm" />
+            </label>
+
+            <label class="field">
+                <span class="field__label">Price (EUR)</span>
+                <input class="field__input" type="number" step="50" @bind="_price" />
+            </label>
+        </div>
+
+        <div class="action-bar">
+            <button type="button" class="btn" @onclick="Randomize" disabled="@(_makes.Count == 0)">Randomize</button>
+            <button type="button" class="btn btn--primary" @onclick="CreateDraft" disabled="@_busy">Create draft</button>
+            <button type="button" class="btn" @onclick="CreateDraftDuplicate" disabled="@_busy">Create draft ×2</button>
+            <span class="action-bar__hint">×2 reuses the same VIN — the unique index rejects the second one.</span>
+        </div>
+
+        @RenderResults()
+    </Modal>
+}
+
+@if (_selected is not null)
+{
+    <Modal Title="@($"{_selected.Year} {_selected.Make} {_selected.Model}")"
+           Subtitle="@_selected.Vin"
+           OnClose="CloseDetail">
+        <TitleAside>
+            <span class="badge badge--@StatusModifier(_selected.Status)">
+                <span class="badge__dot" aria-hidden="true"></span>@_selected.Status
+            </span>
+        </TitleAside>
+        <ChildContent>
+            <dl class="meta meta--modal">
+                <div class="meta__item">
+                    <dt>Price</dt>
+                    <dd>@_selected.Price.ToString("N0", CultureInfo.InvariantCulture) @_selected.Currency</dd>
+                </div>
+                <div class="meta__item">
+                    <dt>Mileage</dt>
+                    <dd>@_selected.MileageKm.ToString("N0", CultureInfo.InvariantCulture) km</dd>
+                </div>
+                <div class="meta__item">
+                    <dt>Dealer</dt>
+                    <dd class="mono">@ShortId(_selected.DealerId)</dd>
+                </div>
+                <div class="meta__item">
+                    <dt>Created</dt>
+                    <dd>@FormatUtc(_selected.CreatedAt)</dd>
+                </div>
+            </dl>
+
+            @if (_selected.Status == "Draft")
+            {
+                <div class="form-grid form-grid--compact">
+                    <label class="field">
+                        <span class="field__label">Price (EUR)</span>
+                        <input class="field__input" type="number" step="50" @bind="_editPrice" />
+                    </label>
+                    <label class="field">
+                        <span class="field__label">Mileage (km)</span>
+                        <input class="field__input" type="number" @bind="_editMileageKm" />
+                    </label>
+                </div>
+
+                <div class="action-bar">
+                    <button type="button" class="btn" @onclick="SaveEdit" disabled="@_busy">Save changes</button>
+                    <button type="button" class="btn btn--primary" @onclick="Publish" disabled="@_busy">Publish</button>
+                    <button type="button" class="btn" @onclick="PublishDuplicate" disabled="@_busy">Publish ×2</button>
+                    <span class="action-bar__hint">Mileage can only increase; the second publish hits an already-published listing.</span>
+                </div>
+            }
+            else
+            {
+                <div class="form-grid form-grid--compact">
+                    <label class="field">
+                        <span class="field__label">Acting as (buyer)</span>
+                        <select class="field__input" @bind="_buyerId">
+                            @foreach (var user in EligibleBuyers)
+                            {
+                                <option value="@user.Id">@user.Display</option>
+                            }
+                        </select>
+                    </label>
+                </div>
+
+                <div class="action-bar">
+                    <button type="button" class="btn btn--primary" @onclick="Buy" disabled="@(_busy || EligibleBuyers.Count == 0)">Buy</button>
+                    <button type="button" class="btn" @onclick="BuyTwice" disabled="@(_busy || EligibleBuyers.Count == 0)">Buy ×2</button>
+                    <button type="button" class="btn" @onclick="BuyRace" disabled="@(_busy || EligibleBuyers.Count < 2)">Buy — race (2 users)</button>
+                    <span class="action-bar__hint">
+                        The seller's own company is excluded. Race fires both requests at once; the unique index
+                        on the transaction decides the winner.
+                    </span>
+                </div>
+            }
+
+            @RenderResults()
+        </ChildContent>
+    </Modal>
+}
+
 @code {
+    private const string VinAlphabet = "ABCDEFGHJKLMNPRSTUVWXYZ0123456789"; // real VINs omit I, O, Q
+
     private IReadOnlyList<VehicleListingSummary> _listings = [];
+    private IReadOnlyList<VehicleMakeSummary> _makes = [];
+    private IReadOnlyList<UserSummary> _users = [];
+    private UserSummary? _me;
+
     private bool _isLoading = true;
+    private bool _busy;
     private string? _errorMessage;
+    private readonly List<(bool Ok, string Text)> _results = [];
+
+    private bool _showCreate;
+    private Guid _makeId;
+    private Guid _modelId;
+    private string _vin = string.Empty;
+    private int _year = DateTime.UtcNow.Year;
+    private int _mileageKm;
+    private decimal _price;
+
+    private VehicleListingSummary? _selected;
+    private decimal _editPrice;
+    private int _editMileageKm;
+    private Guid _buyerId;
 
     private string ApiBaseUrl => Configuration["VehicleListingsApi:BaseUrl"] ?? "(not configured)";
 
+    private IReadOnlyList<VehicleModelSummary> SelectedMakeModels =>
+        _makes.FirstOrDefault(make => make.Id == _makeId)?.Models ?? [];
+
+    // A company can never buy its own listing, so those users would only ever produce a rejection.
+    private IReadOnlyList<UserSummary> EligibleBuyers =>
+        _selected is null ? [] : [.. _users.Where(user => user.CompanyId != _selected.DealerCompanyId)];
+
     protected override async Task OnInitializedAsync()
     {
+        await LoadCatalogueAsync();
         await LoadListingsAsync();
+    }
+
+    private async Task LoadCatalogueAsync()
+    {
+        try
+        {
+            _makes = await Catalogue.GetMakesAsync();
+            _users = await Catalogue.GetUsersAsync();
+
+            // No authentication yet: "me" is the seeded default dealer.
+            _me = _users.FirstOrDefault(user => user.CompanyName == "Red & White") ?? _users.FirstOrDefault();
+
+            Randomize();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Failed to load catalogue data");
+        }
     }
 
     private async Task LoadListingsAsync()
@@ -114,7 +290,11 @@
 
         try
         {
-            _listings = await VehicleListingsApiClient.GetAllAsync();
+            _listings = await Listings.GetAllAsync();
+
+            // Keep the open modal pointing at the refreshed copy so its status stays current.
+            if (_selected is not null)
+                SelectListing(_listings.FirstOrDefault(listing => listing.Id == _selected.Id));
         }
         catch (Exception exception)
         {
@@ -128,8 +308,265 @@
         }
     }
 
-    // Accepts both the lifecycle names currently in the domain (Active, Removed) and the ones
-    // the project context documents (Published, Cancelled), until the two are reconciled.
+    private RenderFragment RenderResults() => builder =>
+    {
+        if (_results.Count == 0)
+            return;
+
+        builder.OpenElement(0, "ul");
+        builder.AddAttribute(1, "class", "results");
+
+        var sequence = 2;
+        foreach (var (ok, text) in _results)
+        {
+            builder.OpenElement(sequence++, "li");
+            builder.AddAttribute(sequence++, "class", $"results__item results__item--{(ok ? "ok" : "fail")}");
+
+            builder.OpenElement(sequence++, "span");
+            builder.AddAttribute(sequence++, "class", $"badge badge--{(ok ? "published" : "cancelled")}");
+            builder.AddContent(sequence++, ok ? "OK" : "REJECTED");
+            builder.CloseElement();
+
+            builder.OpenElement(sequence++, "span");
+            builder.AddContent(sequence++, text);
+            builder.CloseElement();
+
+            builder.CloseElement();
+        }
+
+        builder.CloseElement();
+    };
+
+    private void OpenCreate()
+    {
+        _results.Clear();
+        Randomize();
+        _showCreate = true;
+    }
+
+    private void CloseCreate() => _showCreate = false;
+
+    private void OpenDetail(VehicleListingSummary listing)
+    {
+        _results.Clear();
+        SelectListing(listing);
+    }
+
+    private void CloseDetail() => _selected = null;
+
+    private void Randomize()
+    {
+        if (_makes.Count == 0)
+            return;
+
+        var make = _makes[Random.Shared.Next(_makes.Count)];
+        _makeId = make.Id;
+
+        var model = make.Models.Count > 0 ? make.Models[Random.Shared.Next(make.Models.Count)] : null;
+        _modelId = model?.Id ?? Guid.Empty;
+
+        _year = model is null ? DateTime.UtcNow.Year : RandomYearFor(model);
+        _vin = RandomVin();
+        _mileageKm = Random.Shared.Next(0, 500) * 500;          // 0 – 250 000 km
+        _price = Random.Shared.Next(60, 1600) * 50m;            // 3 000 – 80 000 EUR
+    }
+
+    private void OnMakeChanged()
+    {
+        var model = SelectedMakeModels.FirstOrDefault();
+        _modelId = model?.Id ?? Guid.Empty;
+        if (model is not null)
+            _year = RandomYearFor(model);
+    }
+
+    private static int RandomYearFor(VehicleModelSummary model)
+    {
+        var earliest = Math.Max(model.ProductionStartYear, 1900);
+        var latest = Math.Min(model.ProductionEndYear ?? DateTime.UtcNow.Year, DateTime.UtcNow.Year);
+        return latest <= earliest ? earliest : Random.Shared.Next(earliest, latest + 1);
+    }
+
+    private static string RandomVin()
+        => string.Create(17, 0, (span, _) =>
+        {
+            for (var i = 0; i < span.Length; i++)
+                span[i] = VinAlphabet[Random.Shared.Next(VinAlphabet.Length)];
+        });
+
+    private CreateVehicleListingRequest BuildCreateRequest() =>
+        new(_me!.Id, _modelId, _vin, _year, _mileageKm, _price);
+
+    private async Task CreateDraft()
+    {
+        await RunAction(async () =>
+        {
+            var request = BuildCreateRequest();
+            var result = await Listings.CreateAsync(request, note: "create draft");
+            AddResult(result.Success, result.Success
+                ? $"Draft created for VIN {request.Vin}."
+                : $"Create rejected: {result.Error}");
+
+            if (result.Success)
+                _vin = RandomVin(); // next create gets a fresh VIN
+        });
+    }
+
+    private async Task CreateDraftDuplicate()
+    {
+        await RunAction(async () =>
+        {
+            var request = BuildCreateRequest();
+
+            var first = await Listings.CreateAsync(request, note: "duplicate #1");
+            AddResult(first.Success, first.Success
+                ? $"First create stored VIN {request.Vin}."
+                : $"First create rejected: {first.Error}");
+
+            var second = await Listings.CreateAsync(request, note: "duplicate #2");
+            AddResult(second.Success, second.Success
+                ? $"Second create also stored VIN {request.Vin} — the uniqueness rule did not hold."
+                : $"Second create rejected as expected: {second.Error}");
+
+            if (first.Success)
+                _vin = RandomVin();
+        });
+    }
+
+    private async Task Publish()
+    {
+        await RunAction(async () =>
+        {
+            var result = await Listings.PublishAsync(_selected!.Id, note: "publish");
+            AddResult(result.Success, result.Success ? "Listing published." : $"Publish rejected: {result.Error}");
+        });
+    }
+
+    private async Task PublishDuplicate()
+    {
+        await RunAction(async () =>
+        {
+            var first = await Listings.PublishAsync(_selected!.Id, note: "publish #1");
+            AddResult(first.Success, first.Success ? "First publish succeeded." : $"First publish rejected: {first.Error}");
+
+            var second = await Listings.PublishAsync(_selected.Id, note: "publish #2");
+            AddResult(second.Success, second.Success
+                ? "Second publish also succeeded — the transition rule did not hold."
+                : $"Second publish rejected as expected: {second.Error}");
+        });
+    }
+
+    private async Task SaveEdit()
+    {
+        await RunAction(async () =>
+        {
+            var request = new UpdateVehicleListingRequest(_editPrice, _editMileageKm, _me!.Id);
+            var result = await Listings.UpdateAsync(_selected!.Id, request, note: "update");
+            AddResult(result.Success, result.Success ? "Listing updated." : $"Update rejected: {result.Error}");
+        });
+    }
+
+    private async Task Buy()
+    {
+        await RunAction(async () =>
+        {
+            var buyer = BuyerById(_buyerId);
+            var result = await Listings.SellAsync(_selected!.Id, _buyerId, note: "buy");
+            AddResult(result.Success, result.Success
+                ? $"Bought by {buyer?.Display}."
+                : $"Buy rejected: {result.Error}");
+        });
+    }
+
+    private async Task BuyTwice()
+    {
+        await RunAction(async () =>
+        {
+            var buyer = BuyerById(_buyerId);
+
+            var first = await Listings.SellAsync(_selected!.Id, _buyerId, note: "buy #1");
+            AddResult(first.Success, first.Success ? $"First buy succeeded ({buyer?.Name})." : $"First buy rejected: {first.Error}");
+
+            var second = await Listings.SellAsync(_selected.Id, _buyerId, note: "buy #2");
+            AddResult(second.Success, second.Success
+                ? "Second buy also succeeded — the listing sold twice."
+                : $"Second buy rejected as expected: {second.Error}");
+        });
+    }
+
+    private async Task BuyRace()
+    {
+        await RunAction(async () =>
+        {
+            var buyers = EligibleBuyers;
+            var first = BuyerById(_buyerId) ?? buyers[0];
+            var second = buyers.First(user => user.Id != first.Id);
+
+            // Both requests leave at the same time: each gets its own DbContext server-side, so both
+            // read the listing as Published and both pass the domain check. Only the database's
+            // unique index on vehicle_transactions.vehicle_listing_id can break the tie.
+            var raceA = Listings.SellAsync(_selected!.Id, first.Id, note: $"race: {first.Name}");
+            var raceB = Listings.SellAsync(_selected.Id, second.Id, note: $"race: {second.Name}");
+            var outcomes = await Task.WhenAll(raceA, raceB);
+
+            AddResult(outcomes[0].Success, outcomes[0].Success
+                ? $"{first.Name} won the race."
+                : $"{first.Name} lost: {outcomes[0].Error}");
+            AddResult(outcomes[1].Success, outcomes[1].Success
+                ? $"{second.Name} won the race."
+                : $"{second.Name} lost: {outcomes[1].Error}");
+
+            if (outcomes.Count(outcome => outcome.Success) == 1)
+                AddResult(true, "Exactly one buyer won — the double-sale guard held.");
+            else
+                AddResult(false, "Both requests succeeded — the listing was sold twice.");
+        });
+    }
+
+    private UserSummary? BuyerById(Guid id) => _users.FirstOrDefault(user => user.Id == id);
+
+    private async Task RunAction(Func<Task> action)
+    {
+        _busy = true;
+        _results.Clear();
+
+        try
+        {
+            await action();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Console action failed");
+            AddResult(false, exception.Message);
+        }
+        finally
+        {
+            _busy = false;
+            await LoadListingsAsync();
+        }
+    }
+
+    private void AddResult(bool ok, string text) => _results.Add((ok, text));
+
+    private void SelectListing(VehicleListingSummary? listing)
+    {
+        _selected = listing;
+        if (listing is null)
+            return;
+
+        _editPrice = listing.Price;
+        _editMileageKm = listing.MileageKm;
+
+        var buyers = EligibleBuyers;
+        if (buyers.Count > 0 && buyers.All(user => user.Id != _buyerId))
+            _buyerId = buyers[0].Id;
+    }
+
+    private void OnListingKey(KeyboardEventArgs args, VehicleListingSummary listing)
+    {
+        if (args.Key is "Enter" or " ")
+            OpenDetail(listing);
+    }
+
     private static string StatusModifier(string status) => status.ToLowerInvariant() switch
     {
         "draft" => "draft",

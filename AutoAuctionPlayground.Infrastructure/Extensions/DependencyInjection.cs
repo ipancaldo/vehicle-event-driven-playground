@@ -24,6 +24,8 @@ namespace AutoAuctionPlayground.Infrastructure.Extensions
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IRepositoryFactory, RepositoryFactory>();
             services.AddScoped<IVehicleListingQueries, VehicleListingQueries>();
+            services.AddScoped<IVehicleMakeQueries, VehicleMakeQueries>();
+            services.AddScoped<IUserQueries, UserQueries>();
 
             // Every concrete repository is registered by its interfaces (ICompanyRepository, ...),
             // so the RepositoryFactory can resolve them by interface from the current scope.
