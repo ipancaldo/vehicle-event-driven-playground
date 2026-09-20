@@ -1,7 +1,147 @@
-﻿@page "/"
+@page "/"
+@using System.Globalization
+@using AutoAuctionPlayground.Web.Services
+@inject VehicleListingsApiClient VehicleListingsApiClient
+@inject ILogger<Home> Logger
+@inject IConfiguration Configuration
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Vehicle listings &middot; AutoAuctionPlayground</PageTitle>
 
-<h1>Hello, world!</h1>
+<section class="panel">
+    <header class="panel__header">
+        <div>
+            <h1 class="panel__title">Vehicle listings</h1>
+            <p class="panel__subtitle">Every advertisement currently known to the listings API.</p>
+        </div>
+        <div class="panel__actions">
+            @if (_listings.Count > 0)
+            {
+                <span class="count-chip">@_listings.Count listed</span>
+            }
+            <button type="button" class="btn" @onclick="LoadListingsAsync" disabled="@_isLoading">
+                @(_isLoading ? "Refreshing..." : "Refresh")
+            </button>
+        </div>
+    </header>
 
-Welcome to your new app.
+    <div class="panel__body">
+        @if (_isLoading)
+        {
+            <div class="listing-grid" aria-busy="true" aria-label="Loading vehicle listings">
+                @for (var i = 0; i < 3; i++)
+                {
+                    <div class="skeleton-card"></div>
+                }
+            </div>
+        }
+        else if (_errorMessage is not null)
+        {
+            <div class="state state--error" role="alert">
+                <span class="state__glyph" aria-hidden="true">!</span>
+                <h2 class="state__title">Could not load vehicle listings</h2>
+                <p class="state__text">@_errorMessage</p>
+                <p class="state__hint">Configured endpoint: @ApiBaseUrl</p>
+                <div class="state__actions">
+                    <button type="button" class="btn btn--primary" @onclick="LoadListingsAsync">Try again</button>
+                </div>
+            </div>
+        }
+        else if (_listings.Count == 0)
+        {
+            <div class="state">
+                <span class="state__glyph" aria-hidden="true">+</span>
+                <h2 class="state__title">No vehicle listings yet</h2>
+                <p class="state__text">
+                    The API answered successfully with an empty list, so nothing has been listed so far.
+                </p>
+                <p class="state__hint">Creating a listing arrives with the create use case.</p>
+            </div>
+        }
+        else
+        {
+            <div class="listing-grid">
+                @foreach (var listing in _listings)
+                {
+                    <article class="listing">
+                        <div class="listing__head">
+                            <div>
+                                <h2 class="listing__title">@listing.Year @listing.Make @listing.Model</h2>
+                                <p class="listing__vin mono">@listing.Vin</p>
+                            </div>
+                            <span class="badge badge--@StatusModifier(listing.Status)">
+                                <span class="badge__dot" aria-hidden="true"></span>@listing.Status
+                            </span>
+                        </div>
+
+                        <dl class="meta">
+                            <div class="meta__item">
+                                <dt>Price</dt>
+                                <dd>@listing.Price.ToString("N0", CultureInfo.InvariantCulture)</dd>
+                            </div>
+                            <div class="meta__item">
+                                <dt>Mileage</dt>
+                                <dd>@listing.MileageKm.ToString("N0", CultureInfo.InvariantCulture) km</dd>
+                            </div>
+                        </dl>
+
+                        <footer class="listing__foot">
+                            <span class="mono" title="Dealer @listing.DealerId">dealer @ShortId(listing.DealerId)</span>
+                            <span>@FormatUtc(listing.CreatedAt)</span>
+                        </footer>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private IReadOnlyList<VehicleListingSummary> _listings = [];
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    private string ApiBaseUrl => Configuration["VehicleListingsApi:BaseUrl"] ?? "(not configured)";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadListingsAsync();
+    }
+
+    private async Task LoadListingsAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            _listings = await VehicleListingsApiClient.GetAllAsync();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Failed to load vehicle listings");
+            _listings = [];
+            _errorMessage = "Vehicle listings could not be loaded. Check that the API is running, then try again.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    // Accepts both the lifecycle names currently in the domain (Active, Removed) and the ones
+    // the project context documents (Published, Cancelled), until the two are reconciled.
+    private static string StatusModifier(string status) => status.ToLowerInvariant() switch
+    {
+        "draft" => "draft",
+        "active" or "published" => "published",
+        "paused" => "paused",
+        "sold" => "sold",
+        "removed" or "cancelled" => "cancelled",
+        _ => "unknown"
+    };
+
+    private static string ShortId(Guid id) => id.ToString()[..8];
+
+    private static string FormatUtc(DateTime value) =>
+        value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + " UTC";
+}
