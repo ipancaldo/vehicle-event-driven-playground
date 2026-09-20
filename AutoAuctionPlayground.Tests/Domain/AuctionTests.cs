@@ -79,7 +79,7 @@ namespace AutoAuctionPlayground.Tests.Domain
 
             var bid = auction.PlaceBid(bidder, 40000, Now.AddHours(1));
 
-            Assert.Equal(40000, auction.HighestBidAmount);
+            Assert.Equal(40000, auction.HighestBidAmount!.Amount);
             Assert.Equal(bidder.Id, auction.HighestBidderUserId);
             Assert.Equal(2, auction.Version);
             Assert.Same(bid, Assert.Single(auction.Bids));
@@ -104,7 +104,7 @@ namespace AutoAuctionPlayground.Tests.Domain
 
             auction.PlaceBid(second, 41000, Now.AddMinutes(1));
 
-            Assert.Equal(41000, auction.HighestBidAmount);
+            Assert.Equal(41000, auction.HighestBidAmount!.Amount);
             Assert.Equal(second.Id, auction.HighestBidderUserId);
             Assert.Equal(2, auction.Bids.Count);
             Assert.Equal(3, auction.Version);
@@ -120,7 +120,7 @@ namespace AutoAuctionPlayground.Tests.Domain
 
             Assert.Throws<InvalidOperationException>(() => auction.PlaceBid(CreateUser("Buyer B"), amount, Now.AddMinutes(1)));
 
-            Assert.Equal(41000, auction.HighestBidAmount);
+            Assert.Equal(41000, auction.HighestBidAmount!.Amount);
             Assert.Single(auction.Bids);
             Assert.Equal(2, auction.Version);
         }

@@ -33,7 +33,7 @@ namespace AutoAuctionPlayground.Tests.Domain
             Assert.Equal(listing.Id, transaction.VehicleListingId);
             Assert.Null(transaction.AuctionId);
             Assert.Equal(buyer.Id, transaction.BuyerUserId);
-            Assert.Equal(42563, transaction.FinalPrice);
+            Assert.Equal(42563, transaction.FinalPrice.Amount);
             Assert.Equal(VehicleTransactionKind.DirectSale, transaction.Kind);
             Assert.Equal(Now, transaction.FinalizedAt);
         }
@@ -72,7 +72,7 @@ namespace AutoAuctionPlayground.Tests.Domain
             Assert.Equal(listing.Id, transaction.VehicleListingId);
             Assert.Equal(auction.Id, transaction.AuctionId);
             Assert.Equal(winner.Id, transaction.BuyerUserId);
-            Assert.Equal(45000, transaction.FinalPrice);
+            Assert.Equal(45000, transaction.FinalPrice.Amount);
             Assert.Equal(VehicleTransactionKind.AuctionWin, transaction.Kind);
         }
 

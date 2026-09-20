@@ -71,7 +71,8 @@ namespace AutoAuctionPlayground.Tests.Domain
             Assert.Equal("Ford", vehicleListing.Model.Make.Name);
             Assert.Equal(year, vehicleListing.Details.Year);
             Assert.Equal(mileageKm, vehicleListing.Details.MileageKm);
-            Assert.Equal(price, vehicleListing.Details.Price);
+            Assert.Equal(price, vehicleListing.Details.Price.Amount);
+            Assert.Equal(Currency.EUR, vehicleListing.Details.Price.Currency);
             Assert.Equal(VehicleListingStatus.Draft, vehicleListing.Status);
             Assert.Null(vehicleListing.UpdatedAt);
             Assert.InRange(vehicleListing.CreatedAt, DateTime.UtcNow.AddMinutes(-1), DateTime.UtcNow);
@@ -188,12 +189,12 @@ namespace AutoAuctionPlayground.Tests.Domain
 
             listing.UpdatePrice(50000, changedBy);
 
-            Assert.Equal(50000, listing.Details.Price);
+            Assert.Equal(50000, listing.Details.Price.Amount);
             Assert.NotNull(listing.UpdatedAt);
 
             var change = Assert.Single(listing.PriceHistory);
-            Assert.Equal(42563, change.OldPrice);
-            Assert.Equal(50000, change.NewPrice);
+            Assert.Equal(42563, change.OldPrice.Amount);
+            Assert.Equal(50000, change.NewPrice.Amount);
             Assert.Equal(changedBy, change.ChangedByUserId);
             Assert.Equal(listing.Id, change.VehicleListingId);
         }

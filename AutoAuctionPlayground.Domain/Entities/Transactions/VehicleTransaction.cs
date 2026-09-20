@@ -2,6 +2,7 @@ using AutoAuctionPlayground.Domain.Entities.Auctions;
 using AutoAuctionPlayground.Domain.Entities.Users;
 using AutoAuctionPlayground.Domain.Entities.Vehicle;
 using AutoAuctionPlayground.Domain.Enums;
+using AutoAuctionPlayground.Domain.ValueObjects;
 
 namespace AutoAuctionPlayground.Domain.Entities.Transactions
 {
@@ -19,7 +20,7 @@ namespace AutoAuctionPlayground.Domain.Entities.Transactions
         public Guid VehicleListingId { get; private set; }
         public Guid? AuctionId { get; private set; }
         public Guid BuyerUserId { get; private set; }
-        public decimal FinalPrice { get; private set; }
+        public Money FinalPrice { get; private set; } = default!;
         public VehicleTransactionKind Kind { get; private set; }
         public DateTime FinalizedAt { get; private set; }
 
@@ -28,7 +29,7 @@ namespace AutoAuctionPlayground.Domain.Entities.Transactions
             Guid vehicleListingId,
             Guid? auctionId,
             Guid buyerUserId,
-            decimal finalPrice,
+            Money finalPrice,
             VehicleTransactionKind kind,
             DateTime finalizedAtUtc)
         {
@@ -68,7 +69,7 @@ namespace AutoAuctionPlayground.Domain.Entities.Transactions
                 auction.VehicleListingId,
                 auction.Id,
                 auction.HighestBidderUserId!.Value,
-                auction.HighestBidAmount!.Value,
+                auction.HighestBidAmount!,
                 VehicleTransactionKind.AuctionWin,
                 nowUtc);
         }

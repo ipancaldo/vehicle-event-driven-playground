@@ -1,3 +1,5 @@
+using AutoAuctionPlayground.Domain.ValueObjects;
+
 namespace AutoAuctionPlayground.Domain.Entities.Vehicle
 {
     // Append-only. The current price is VehicleListing.Details.Price; this is only the trail of
@@ -6,13 +8,13 @@ namespace AutoAuctionPlayground.Domain.Entities.Vehicle
     {
         public Guid Id { get; private set; }
         public Guid VehicleListingId { get; private set; }
-        public decimal OldPrice { get; private set; }
-        public decimal NewPrice { get; private set; }
+        public Money OldPrice { get; private set; } = default!;
+        public Money NewPrice { get; private set; } = default!;
         public Guid ChangedByUserId { get; private set; }
         public DateTime ChangedAt { get; private set; }
 
         private ListingPriceChange() { }
-        private ListingPriceChange(Guid vehicleListingId, decimal oldPrice, decimal newPrice, Guid changedByUserId)
+        private ListingPriceChange(Guid vehicleListingId, Money oldPrice, Money newPrice, Guid changedByUserId)
         {
             Id = Guid.NewGuid();
             VehicleListingId = vehicleListingId;
@@ -22,7 +24,7 @@ namespace AutoAuctionPlayground.Domain.Entities.Vehicle
             ChangedAt = DateTime.UtcNow;
         }
 
-        internal static ListingPriceChange Create(Guid vehicleListingId, decimal oldPrice, decimal newPrice, Guid changedByUserId)
+        internal static ListingPriceChange Create(Guid vehicleListingId, Money oldPrice, Money newPrice, Guid changedByUserId)
             => new(vehicleListingId, oldPrice, newPrice, changedByUserId);
     }
 }

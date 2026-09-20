@@ -23,6 +23,15 @@ namespace AutoAuctionPlayground.Tests.Domain
             Assert.NotEqual(first, second);
         }
 
+        [Fact]
+        public void Create_NormalizesVin()
+        {
+            var details = VehicleListingDetails.Create("  abc123 ", 2017, 127822, 42563);
+
+            Assert.Equal("ABC123", details.Vin);
+            Assert.Equal(details, VehicleListingDetails.Create("ABC123", 2017, 127822, 42563));
+        }
+
         [Theory]
         [InlineData(1899)]
         [InlineData(3000)]
@@ -53,8 +62,8 @@ namespace AutoAuctionPlayground.Tests.Domain
 
             var updated = original.UpdatePrice(50000);
 
-            Assert.Equal(42563, original.Price);
-            Assert.Equal(50000, updated.Price);
+            Assert.Equal(42563, original.Price.Amount);
+            Assert.Equal(50000, updated.Price.Amount);
             Assert.Equal(original.Vin, updated.Vin);
             Assert.Equal(original.Year, updated.Year);
             Assert.Equal(original.MileageKm, updated.MileageKm);

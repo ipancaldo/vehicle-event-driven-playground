@@ -1,13 +1,16 @@
+using AutoAuctionPlayground.Domain.Enums;
+
 namespace AutoAuctionPlayground.Domain.ValueObjects
 {
     public sealed record VehicleListingDetails
     {
         private const int EarliestListingYear = 1900;
 
+        // Normalized (trimmed, upper-case) so the database uniqueness index on it means what it says.
         public string Vin { get; private set; } = default!;
         public int Year { get; private set; }
         public int MileageKm { get; private set; }
-        public decimal Price { get; private set; }
+        public Money Price { get; private set; } = default!;
 
         private VehicleListingDetails() { }
 
@@ -15,7 +18,7 @@ namespace AutoAuctionPlayground.Domain.ValueObjects
             string vin,
             int year,
             int mileageKm,
-            decimal price)
+            Money price)
         {
             Vin = vin;
             Year = year;
@@ -27,19 +30,19 @@ namespace AutoAuctionPlayground.Domain.ValueObjects
             string vin,
             int year,
             int mileageKm,
-            decimal price)
+            decimal price,
+            Currency currency = Money.DefaultCurrency)
         {
             EnsureValidVin(vin);
             EnsureValidYear(year);
             EnsureValidMileage(mileageKm, nameof(mileageKm));
-            EnsureValidPrice(price, nameof(price));
 
-            return new VehicleListingDetails(vin, year, mileageKm, price);
+            return new VehicleListingDetails(NormalizeVin(vin), year, mileageKm, Money.Of(price, currency));
         }
 
         public VehicleListingDetails UpdateMileage(int newMileageKm)
         {
-            return Update(Vin, Year, newMileageKm, Price);
+            return Update(Vin, Year, newMileageKm, Price.Amount);
         }
 
         public VehicleListingDetails UpdatePrice(decimal newPrice)
@@ -53,7 +56,7 @@ namespace AutoAuctionPlayground.Domain.ValueObjects
             int mileageKm,
             decimal price)
         {
-            var updated = Create(vin, year, mileageKm, price);
+            var updated = Create(vin, year, mileageKm, price, Price.Currency);
 
             if (updated.MileageKm < MileageKm)
             {
@@ -64,6 +67,8 @@ namespace AutoAuctionPlayground.Domain.ValueObjects
 
             return updated;
         }
+
+        private static string NormalizeVin(string vin) => vin.Trim().ToUpperInvariant();
 
         private static void EnsureValidVin(string vin)
         {
@@ -81,12 +86,6 @@ namespace AutoAuctionPlayground.Domain.ValueObjects
         {
             if (mileageKm < 0)
                 throw new ArgumentOutOfRangeException(parameterName, "Mileage cannot be negative.");
-        }
-
-        private static void EnsureValidPrice(decimal price, string parameterName)
-        {
-            if (price < 0)
-                throw new ArgumentOutOfRangeException(parameterName, "Price cannot be negative.");
         }
     }
 }

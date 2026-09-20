@@ -67,7 +67,7 @@ namespace AutoAuctionPlayground.Domain.Entities.Vehicle
             EnsureNotCancelled();
             var oldPrice = Details.Price;
             Details = Details.UpdatePrice(newPrice);
-            _priceHistory.Add(ListingPriceChange.Create(Id, oldPrice, newPrice, changedByUserId));
+            _priceHistory.Add(ListingPriceChange.Create(Id, oldPrice, Details.Price, changedByUserId));
             Touch();
         }
 

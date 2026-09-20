@@ -1,6 +1,7 @@
 using AutoAuctionPlayground.Domain.Entities.Users;
 using AutoAuctionPlayground.Domain.Entities.Vehicle;
 using AutoAuctionPlayground.Domain.Enums;
+using AutoAuctionPlayground.Domain.ValueObjects;
 
 namespace AutoAuctionPlayground.Domain.Entities.Auctions
 {
@@ -16,11 +17,11 @@ namespace AutoAuctionPlayground.Domain.Entities.Auctions
         public Guid SellerUserId { get; private set; }
         public Guid SellerCompanyId { get; private set; }
 
-        public decimal StartingPrice { get; private set; }
+        public Money StartingPrice { get; private set; } = default!;
         public AuctionStatus Status { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime EndsAt { get; private set; }
-        public decimal? HighestBidAmount { get; private set; }
+        public Money? HighestBidAmount { get; private set; }
         public Guid? HighestBidderUserId { get; private set; }
         public IReadOnlyCollection<AuctionBid> Bids => _bids.AsReadOnly();
 
@@ -46,7 +47,7 @@ namespace AutoAuctionPlayground.Domain.Entities.Auctions
             Guid vehicleListingId,
             Guid sellerUserId,
             Guid sellerCompanyId,
-            decimal startingPrice,
+            Money startingPrice,
             DateTime createdAtUtc,
             DateTime endsAtUtc)
         {
@@ -70,7 +71,9 @@ namespace AutoAuctionPlayground.Domain.Entities.Auctions
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(startingPrice);
             ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(endsAtUtc, nowUtc);
 
-            return new Auction(listing.Id, listing.DealerId, listing.DealerCompanyId, startingPrice, nowUtc, endsAtUtc);
+            // The auction is priced in the listing's currency; bids are coerced into it below.
+            var price = Money.Of(startingPrice, listing.Details.Price.Currency);
+            return new Auction(listing.Id, listing.DealerId, listing.DealerCompanyId, price, nowUtc, endsAtUtc);
         }
 
         public AuctionBid PlaceBid(User bidder, decimal amount, DateTime nowUtc)
@@ -79,11 +82,12 @@ namespace AutoAuctionPlayground.Domain.Entities.Auctions
             EnsureOpen();
             EnsureNotEnded(nowUtc);
             EnsureNotSellersCompany(bidder);
-            EnsureBeatsCurrentHighest(amount);
+            var money = Money.Of(amount, StartingPrice.Currency);
+            EnsureBeatsCurrentHighest(money);
 
-            var bid = AuctionBid.Create(Id, bidder.Id, amount, nowUtc);
+            var bid = AuctionBid.Create(Id, bidder.Id, money, nowUtc);
             _bids.Add(bid);
-            HighestBidAmount = amount;
+            HighestBidAmount = money;
             HighestBidderUserId = bidder.Id;
             Version++;
             return bid;
@@ -132,7 +136,7 @@ namespace AutoAuctionPlayground.Domain.Entities.Auctions
         // This is the invariant, and under concurrency it is necessary but not sufficient:
         // two requests can both pass it against the same stale HighestBidAmount. Version is what
         // makes it hold.
-        private void EnsureBeatsCurrentHighest(decimal amount)
+        private void EnsureBeatsCurrentHighest(Money amount)
         {
             if (HighestBidAmount is null ? amount < StartingPrice : amount <= HighestBidAmount)
                 throw new InvalidOperationException(
