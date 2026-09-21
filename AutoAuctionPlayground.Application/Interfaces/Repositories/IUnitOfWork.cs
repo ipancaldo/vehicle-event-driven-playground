@@ -8,6 +8,7 @@ namespace AutoAuctionPlayground.Application.Interfaces.Repositories
         IVehicleListingRepository VehicleListings { get; }
         IAuctionRepository Auctions { get; }
         IVehicleTransactionRepository VehicleTransactions { get; }
+        IOutboxMessageRepository OutboxMessages { get; }
 
         // Runs the action inside one database transaction and commits it; anything the action
         // changes through the repositories above is written atomically or not at all.
