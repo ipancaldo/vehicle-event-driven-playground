@@ -1,5 +1,7 @@
+using AutoAuctionPlayground.Application.Interfaces.Messaging;
 using AutoAuctionPlayground.Application.Interfaces.Queries;
 using AutoAuctionPlayground.Application.Interfaces.Repositories;
+using AutoAuctionPlayground.Infrastructure.Messaging;
 using AutoAuctionPlayground.Infrastructure.Persistence;
 using AutoAuctionPlayground.Infrastructure.Persistence.Factories;
 using AutoAuctionPlayground.Infrastructure.Persistence.Queries;
@@ -26,6 +28,8 @@ namespace AutoAuctionPlayground.Infrastructure.Extensions
             services.AddScoped<IVehicleListingQueries, VehicleListingQueries>();
             services.AddScoped<IVehicleMakeQueries, VehicleMakeQueries>();
             services.AddScoped<IUserQueries, UserQueries>();
+            services.AddScoped<IEventPublisher, LoggingEventProducer>();
+            services.AddHostedService<OutboxProducer>();
 
             // Every concrete repository is registered by its interfaces (ICompanyRepository, ...),
             // so the RepositoryFactory can resolve them by interface from the current scope.

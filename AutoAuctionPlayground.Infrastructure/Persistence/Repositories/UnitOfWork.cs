@@ -18,6 +18,7 @@ namespace AutoAuctionPlayground.Infrastructure.Persistence.Repositories
         public IVehicleListingRepository VehicleListings => _repositoryFactory.GetRepository<IVehicleListingRepository>();
         public IAuctionRepository Auctions => _repositoryFactory.GetRepository<IAuctionRepository>();
         public IVehicleTransactionRepository VehicleTransactions => _repositoryFactory.GetRepository<IVehicleTransactionRepository>();
+        public IOutboxMessageRepository OutboxMessages => _repositoryFactory.GetRepository<IOutboxMessageRepository>();
 
         public async Task StartTransaction(Func<Task> action, CancellationToken cancellationToken = default)
         {

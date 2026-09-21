@@ -1,5 +1,6 @@
 using AutoAuctionPlayground.Domain.Entities.Auctions;
 using AutoAuctionPlayground.Domain.Entities.Companies;
+using AutoAuctionPlayground.Domain.Entities.Outbox;
 using AutoAuctionPlayground.Domain.Entities.Transactions;
 using AutoAuctionPlayground.Domain.Entities.Users;
 using AutoAuctionPlayground.Domain.Entities.Vehicle;
@@ -17,6 +18,7 @@ namespace AutoAuctionPlayground.Infrastructure.Persistence
         public DbSet<VehicleListing> VehicleListings => Set<VehicleListing>();
         public DbSet<Auction> Auctions => Set<Auction>();
         public DbSet<VehicleTransaction> VehicleTransactions => Set<VehicleTransaction>();
+        public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

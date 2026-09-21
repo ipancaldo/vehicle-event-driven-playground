@@ -1,11 +1,12 @@
 <Solution>
   <Folder Name="/AutoAuctionPlayground.Tests/">
-    <Project Path="AutoAuctionPlayground.Tests/AutoAuctionPlayground.Domain.Test/AutoAuctionPlayground.Domain.Test.csproj" />
     <Project Path="AutoAuctionPlayground.Tests/AutoAuctionPlayground.Application.Test/AutoAuctionPlayground.Application.Test.csproj" />
+    <Project Path="AutoAuctionPlayground.Tests/AutoAuctionPlayground.Domain.Test/AutoAuctionPlayground.Domain.Test.csproj" />
   </Folder>
   <Project Path="AutoAuctionPlayground.API/AutoAuctionPlayground.API.csproj" />
   <Project Path="AutoAuctionPlayground.Application/AutoAuctionPlayground.Application.csproj" />
   <Project Path="AutoAuctionPlayground.Domain/AutoAuctionPlayground.Domain.csproj" />
+  <Project Path="AutoAuctionPlayground.Functions/AutoAuctionPlayground.Functions.csproj" Id="c00c3d3c-07cb-4cdb-b739-77ddc2e6f24d" />
   <Project Path="AutoAuctionPlayground.Infrastructure/AutoAuctionPlayground.Infrastructure.csproj" />
   <Project Path="AutoAuctionPlayground/AutoAuctionPlayground.Web.csproj" />
 </Solution>
